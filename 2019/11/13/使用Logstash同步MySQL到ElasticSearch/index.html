@@ -1,0 +1,683 @@
+<!DOCTYPE html>
+
+
+
+
+
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 3.9.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png?v=7.4.0">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png?v=7.4.0">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png?v=7.4.0">
+  <link rel="mask-icon" href="/images/logo.svg?v=7.4.0" color="#222">
+
+<link rel="stylesheet" href="/css/main.css?v=7.4.0">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css?v=4.7.0">
+  <link rel="stylesheet" href="/lib/pace/pace-theme-minimal.min.css?v=1.0.2">
+  <script src="/lib/pace/pace.min.js?v=1.0.2"></script>
+
+
+<script id="hexo-configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Mist',
+    version: '7.4.0',
+    exturl: false,
+    sidebar: {"position":"left","display":"post","offset":12,"onmobile":false},
+    copycode: {"enable":false,"show_result":false,"style":null},
+    back2top: {"enable":true,"sidebar":false,"scrollpercent":false},
+    bookmark: {"enable":false,"color":"#222","save":"auto"},
+    fancybox: false,
+    mediumzoom: false,
+    lazyload: false,
+    pangu: false,
+    algolia: {
+      appID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    },
+    localsearch: {"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},
+    path: '',
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    translation: {
+      copy_button: '复制',
+      copy_success: '复制成功',
+      copy_failure: '复制失败'
+    },
+    sidebarPadding: 40
+  };
+</script>
+
+  <meta name="description" content="mysql 作为成熟稳定的数据持久化解决方案，广泛地应用在各种领域，但是MySQL在进行进行非常庞大的数据检索时速度会比较慢，而 elasticsearch可以作为一项解决方案，而我们要做的只需要将 mysql 中的数据同步到 elasticsearch 中即可。这里使用的同步工具为Logstash">
+<meta name="keywords" content="Logstash,ElasticSearch,MySQL">
+<meta property="og:type" content="article">
+<meta property="og:title" content="使用Logstash同步MySQL到ElasticSearch">
+<meta property="og:url" content="http://yoursite.com/2019/11/13/使用Logstash同步MySQL到ElasticSearch/index.html">
+<meta property="og:site_name" content="lhfly">
+<meta property="og:description" content="mysql 作为成熟稳定的数据持久化解决方案，广泛地应用在各种领域，但是MySQL在进行进行非常庞大的数据检索时速度会比较慢，而 elasticsearch可以作为一项解决方案，而我们要做的只需要将 mysql 中的数据同步到 elasticsearch 中即可。这里使用的同步工具为Logstash">
+<meta property="og:locale" content="zh-CN">
+<meta property="og:updated_time" content="2019-11-13T05:22:02.795Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="使用Logstash同步MySQL到ElasticSearch">
+<meta name="twitter:description" content="mysql 作为成熟稳定的数据持久化解决方案，广泛地应用在各种领域，但是MySQL在进行进行非常庞大的数据检索时速度会比较慢，而 elasticsearch可以作为一项解决方案，而我们要做的只需要将 mysql 中的数据同步到 elasticsearch 中即可。这里使用的同步工具为Logstash">
+  <link rel="canonical" href="http://yoursite.com/2019/11/13/使用Logstash同步MySQL到ElasticSearch/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome: false,
+    isPost: true,
+    isPage: false,
+    isArchive: false
+  };
+</script>
+
+  <title>使用Logstash同步MySQL到ElasticSearch | lhfly</title>
+  
+
+
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .logo,
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-CN">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-meta">
+
+    <div>
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">lhfly</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+  </div>
+
+  <div class="site-nav-toggle">
+    <button aria-label="切换导航栏">
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+
+<nav class="site-nav">
+  
+  <ul id="menu" class="menu">
+      
+      
+      
+        
+        <li class="menu-item menu-item-home">
+      
+    
+
+    <a href="/" rel="section"><i class="menu-item-icon fa fa-fw fa-home"></i> <br>首页</a>
+
+  </li>
+      
+      
+      
+        
+        <li class="menu-item menu-item-about">
+      
+    
+
+    <a href="/about/" rel="section"><i class="menu-item-icon fa fa-fw fa-user"></i> <br>关于</a>
+
+  </li>
+      
+      
+      
+        
+        <li class="menu-item menu-item-tags">
+      
+    
+
+    <a href="/tags/" rel="section"><i class="menu-item-icon fa fa-fw fa-tags"></i> <br>标签</a>
+
+  </li>
+      
+      
+      
+        
+        <li class="menu-item menu-item-categories">
+      
+    
+
+    <a href="/categories/" rel="section"><i class="menu-item-icon fa fa-fw fa-th"></i> <br>分类</a>
+
+  </li>
+      
+      
+      
+        
+        <li class="menu-item menu-item-archives">
+      
+    
+
+    <a href="/archives/" rel="section"><i class="menu-item-icon fa fa-fw fa-archive"></i> <br>归档</a>
+
+  </li>
+  </ul>
+
+    
+
+</nav>
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+      <article itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block post">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2019/11/13/使用Logstash同步MySQL到ElasticSearch/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="lhf2018">
+      <meta itemprop="description" content="热爱技术，热爱生活">
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="lhfly">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">使用Logstash同步MySQL到ElasticSearch
+
+          
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              
+                
+              
+
+              <time title="创建时间：2019-11-13 11:47:09 / 修改时间：13:22:02" itemprop="dateCreated datePublished" datetime="2019-11-13T11:47:09+08:00">2019-11-13</time>
+            </span>
+          
+            
+
+            
+          
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing"><a href="/categories/ElasticSearch/" itemprop="url" rel="index"><span itemprop="name">ElasticSearch</span></a></span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            <span id="/2019/11/13/使用Logstash同步MySQL到ElasticSearch/" class="post-meta-item leancloud_visitors" data-flag-title="使用Logstash同步MySQL到ElasticSearch" title="阅读次数">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-eye"></i>
+              </span>
+              <span class="post-meta-item-text">阅读次数：</span>
+              <span class="leancloud-visitors-count"></span>
+            </span>
+          
+  
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="fa fa-comment-o"></i>
+      </span>
+        
+      
+      <span class="post-meta-item-text">Valine：</span>
+    
+    <a title="valine" href="/2019/11/13/使用Logstash同步MySQL到ElasticSearch/#comments" itemprop="discussionUrl"><span class="post-comments-count valine-comment-count" data-xid="/2019/11/13/使用Logstash同步MySQL到ElasticSearch/" itemprop="commentCount"></span></a>
+  </span>
+  
+  
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <p>mysql 作为成熟稳定的数据持久化解决方案，广泛地应用在各种领域，但是MySQL在进行进行非常庞大的数据检索时速度会比较慢，而 elasticsearch可以作为一项解决方案，而我们要做的只需要将 mysql 中的数据同步到 elasticsearch 中即可。<br>这里使用的同步工具为<strong>Logstash</strong></p><a id="more"></a>
+<h5 id="Logstash下载"><a href="#Logstash下载" class="headerlink" title="Logstash下载"></a>Logstash下载</h5><p>Logstash官网下载地址：<a href="https://www.elastic.co/products/logstash" target="_blank" rel="noopener">logstash</a><br>下载的版本尽量和elasticsearch版本号一致</p>
+<h5 id="编写配置文件"><a href="#编写配置文件" class="headerlink" title="编写配置文件"></a>编写配置文件</h5><p>在config文件夹里创建mysql.conf配置文件</p>
+<figure class="highlight puppet"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">input</span> &#123;</span><br><span class="line">  jdbc &#123;</span><br><span class="line">    <span class="attr">jdbc_driver_library</span> =&gt; <span class="string">"C:/Users/11469/Desktop/logstash-6.2.2/logstash-6.2.2/mysql-connector-java-5.1.6.jar"</span></span><br><span class="line">    <span class="attr">jdbc_driver_class</span> =&gt; <span class="string">"com.mysql.jdbc.Driver"</span></span><br><span class="line">    <span class="attr">jdbc_connection_string</span> =&gt; <span class="string">"jdbc:mysql://127.0.0.1:3306/blog"</span></span><br><span class="line">    <span class="attr">jdbc_user</span> =&gt; <span class="string">"root"</span></span><br><span class="line">	</span><br><span class="line">    <span class="attr">jdbc_password</span> =&gt; <span class="string">"root"</span></span><br><span class="line">	<span class="attr">clean_run</span> =&gt; <span class="keyword">true</span></span><br><span class="line">    <span class="attr">schedule</span> =&gt; <span class="string">"* * * * *"</span></span><br><span class="line">	</span><br><span class="line">    <span class="attr">statement</span> =&gt; <span class="string">"SELECT * FROM t_blog WHERE update_time &gt; :sql_last_value AND update_time &lt; NOW() ORDER BY update_time desc"</span></span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br><span class="line"><span class="keyword">output</span> &#123;</span><br><span class="line">  elasticsearch &#123;</span><br><span class="line">    <span class="attr">hosts</span> =&gt; [<span class="string">"127.0.0.1:9200"</span>]</span><br><span class="line">    <span class="attr">index</span> =&gt; <span class="string">"blog"</span></span><br><span class="line">    <span class="attr">document_id</span> =&gt; <span class="string">"%&#123;id&#125;"</span></span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><code>jdbc_driver_library</code>JDBC驱动的路径<br><code>jdbc_driver_class</code>驱动类的名字<br><code>jdbc_connection_string</code>mysql 地址<br><code>jdbc_user</code>mysql 用户<br><code>jdbc_password</code>mysql 密码<br><code>schedule</code>执行 sql 时机，类似 crontab 的调度<br><code>clean_run</code>是否清除 last_run_metadata_path 的记录,如果为真那么每次都相当于从头开始查询所有的数据库记录</p>
+<h5 id="启动logstash"><a href="#启动logstash" class="headerlink" title="启动logstash"></a>启动logstash</h5><p>去下载下来的logstash的bin目录执行</p>
+<figure class="highlight gams"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="title">logstash</span></span> -f ../config/mysql.conf</span><br></pre></td></tr></table></figure>
+
+<p>程序就以mysql.conf为配置文件进行启动，当结果出现</p>
+<figure class="highlight markdown"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">[<span class="string">2019-11-13T11:42:21,409</span>][<span class="symbol">INFO </span>][<span class="string">logstash.outputs.elasticsearch</span>] Installing elasticsearch template to _template/logstash</span><br><span class="line">[<span class="string">2019-11-13T11:42:32,595</span>][<span class="symbol">INFO </span>][<span class="string">logstash.outputs.elasticsearch</span>] New Elasticsearch output &#123;:class=&gt;"LogStash::Outputs::ElasticSearch", :hosts=&gt;["//127.0.0.1:9200"]&#125;</span><br><span class="line">[<span class="string">2019-11-13T11:42:32,898</span>][<span class="symbol">INFO </span>][<span class="string">logstash.pipeline        </span>] Pipeline started succesfully &#123;:pipeline_id=&gt;"main", :thread=&gt;"#<span class="xml"><span class="tag">&lt;<span class="name">Thread:0x12eea893</span> <span class="attr">sleep</span>&gt;</span></span>"&#125;</span><br><span class="line">[<span class="string">2019-11-13T11:42:32,984</span>][<span class="symbol">INFO </span>][<span class="string">logstash.agent           </span>] Pipelines running &#123;:count=&gt;1, :pipelines=&gt;["main"]&#125;</span><br><span class="line">[<span class="string">2019-11-13T11:43:01,843</span>][<span class="symbol">INFO </span>][<span class="string">logstash.inputs.jdbc     </span>] (0.103000s) SELECT version()</span><br><span class="line">[<span class="string">2019-11-13T11:43:01,974</span>][<span class="symbol">INFO </span>][<span class="string">logstash.inputs.jdbc     </span>] (0.087000s) SELECT * FROM t<span class="emphasis">_blog WHERE update_</span>time &gt; '1970-01-01 00:00:00' AND update<span class="emphasis">_time &lt; NOW() ORDER BY update_</span>time desc</span><br></pre></td></tr></table></figure>
+
+<p>正常执行，MySQL中的数据就同步到了ElasticSearch</p>
+<h5 id="报错"><a href="#报错" class="headerlink" title="报错"></a>报错</h5><p>如果结果出现</p>
+<figure class="highlight markdown"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">[<span class="string">2019-11-13T11:40:33,754</span>][<span class="symbol">INFO </span>][<span class="string">logstash.runner          </span>] Starting Logstash &#123;"logstash.version"=&gt;"6.2.2"&#125;</span><br><span class="line">[<span class="string">2019-11-13T11:40:34,073</span>][<span class="symbol">INFO </span>][<span class="string">logstash.agent           </span>] Successfully started Logstash API endpoint &#123;:port=&gt;9600&#125;</span><br><span class="line">[<span class="string">2019-11-13T11:40:34,241</span>][<span class="symbol">ERROR</span>][<span class="string">logstash.agent           </span>] Failed to execute action &#123;:action=&gt;LogStash::PipelineAction::Create/pipeline<span class="emphasis">_id:main, :exception=&gt;"LogStash::ConfigurationError", :message=&gt;"Expected one of #, &#123;, &#125; at line 12, column 76 (byte 423) after input &#123;\n  jdbc &#123;\n    jdbc_</span>driver<span class="emphasis">_library =&gt; \"C:/Users/11469/Desktop/logstash-6.2.2/logstash-6.2.2/mysql-connector-java-5.1.6.jar\"\n    jdbc_</span>driver<span class="emphasis">_class =&gt; \"com.mysql.jdbc.Driver\"\n    jdbc_</span>connection<span class="emphasis">_string =&gt; \"jdbc:mysql://127.0.0.1:3306/blog\"\n    jdbc_</span>user =&gt; \"root\"\n\t\n    jdbc<span class="emphasis">_password =&gt; \"root\"\n\tclean_</span>run =&gt; true\n    schedule =&gt; \"<span class="bullet">* *</span> <span class="bullet">* *</span> <span class="emphasis">*\"\n\t\n    statement =&gt; \"SELECT *</span> FROM t<span class="emphasis">_blog WHERE update_</span>time &gt; :sql<span class="emphasis">_last_</span>value\"", :backtrace=&gt;["C:/Users/11469/Desktop/logstash-6.2.2/logstash-6.2.2/logstash-core/lib/logstash/compiler.rb:42:in <span class="code">`compile_imperative'", "C:/Users/11469/Desktop/logstash-6.2.2/logstash-6.2.2/logstash-core/lib/logstash/compiler.rb:50:in `</span>compile<span class="emphasis">_graph'", "C:/Users/11469/Desktop/logstash-6.2.2/logstash-6.2.2/logstash-core/lib/logstash/compiler.rb:12:in `block in compile_</span>sources'",</span><br></pre></td></tr></table></figure>
+
+<p>中有<code>LogStash::ConfigurationError</code>,则说明mysql.conf出现了错误，检查一下是否出现地址写错，忘了加””之类</p>
+
+    </div>
+
+    
+    
+    
+        
+      
+
+      <footer class="post-footer">
+	  <div>    
+		 
+		 
+		<ul class="post-copyright">
+		  <li class="post-copyright-author">
+			  <strong>本文作者：</strong>lhf2018
+		  </li>
+		  <li class="post-copyright-link">
+			<strong>本文链接：</strong>
+			<a href="/2019/11/13/使用Logstash同步MySQL到ElasticSearch/" title="使用Logstash同步MySQL到ElasticSearch">2019/11/13/使用Logstash同步MySQL到ElasticSearch/</a>
+		  </li>
+		  <li class="post-copyright-license">
+			<strong>版权： </strong>
+			本站文章均采用 <a href="http://creativecommons.org/licenses/by-nc-sa/3.0/cn/" rel="external nofollow" target="_blank">CC BY-NC-SA 3.0 CN</a> 许可协议，请勿用于商业，转载注明出处！
+		  </li>
+		</ul>
+		
+		</div>
+          
+            
+          
+          <div class="post-tags">
+            
+              <a href="/tags/Logstash/" rel="tag"># Logstash</a>
+            
+              <a href="/tags/ElasticSearch/" rel="tag"># ElasticSearch</a>
+            
+              <a href="/tags/MySQL/" rel="tag"># MySQL</a>
+            
+          </div>
+        
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-next post-nav-item">
+              
+                <a href="/2019/11/05/Junit的参数化设置/" rel="next" title="Junit的参数化设置">
+                  <i class="fa fa-chevron-left"></i> Junit的参数化设置
+                </a>
+              
+            </div>
+
+            <span class="post-nav-divider"></span>
+
+            <div class="post-nav-prev post-nav-item">
+              
+                <a href="/2019/11/23/124.二叉树中的最大路径和/" rel="prev" title="124.二叉树中的最大路径和">
+                  124.二叉树中的最大路径和 <i class="fa fa-chevron-right"></i>
+                </a>
+              
+            </div>
+          </div>
+        
+      </footer>
+    
+  </div>
+  
+  
+  
+  </article>
+
+  </div>
+
+
+          </div>
+          
+    
+    <div class="comments" id="comments"></div>
+  
+
+        </div>
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+        
+        
+        
+        
+      
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-5"><a class="nav-link" href="#Logstash下载"><span class="nav-number">1.</span> <span class="nav-text">Logstash下载</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#编写配置文件"><span class="nav-number">2.</span> <span class="nav-text">编写配置文件</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#启动logstash"><span class="nav-number">3.</span> <span class="nav-text">启动logstash</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#报错"><span class="nav-number">4.</span> <span class="nav-text">报错</span></a></li></ol></div>
+        
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">lhf2018</p>
+  <div class="site-description" itemprop="description">热爱技术，热爱生活</div>
+</div>
+  <nav class="site-state motion-element">
+      <div class="site-state-item site-state-posts">
+        
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">28</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+    
+      
+      
+      <div class="site-state-item site-state-categories">
+        
+          
+            <a href="/categories/">
+          
+        
+        <span class="site-state-item-count">20</span>
+        <span class="site-state-item-name">分类</span>
+        </a>
+      </div>
+    
+      
+      
+      <div class="site-state-item site-state-tags">
+        
+          
+            <a href="/tags/">
+          
+        
+        <span class="site-state-item-count">33</span>
+        <span class="site-state-item-name">标签</span>
+        </a>
+      </div>
+    
+  </nav>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+      
+      
+        
+      
+      
+        
+      
+        <a href="https://github.com/lhf2018" title="GitHub &rarr; https://github.com/lhf2018" rel="noopener" target="_blank"><i class="fa fa-fw fa-github"></i>GitHub</a>
+      </span>
+    
+      <span class="links-of-author-item">
+      
+      
+        
+      
+      
+        
+      
+        <a href="mailto:1146953160@qq.com" title="E-Mail &rarr; mailto:1146953160@qq.com" rel="noopener" target="_blank"><i class="fa fa-fw fa-envelope"></i>E-Mail</a>
+      </span>
+    
+      <span class="links-of-author-item">
+      
+      
+        
+      
+      
+        
+      
+        <a href="https://blog.csdn.net/weixin_44128511" title="CSDN &rarr; https://blog.csdn.net/weixin_44128511" rel="noopener" target="_blank"><i class="fa fa-fw fa-globe"></i>CSDN</a>
+      </span>
+    
+  </div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <script async src="https://dn-lbstatics.qbox.me/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+<div class="copyright">&copy; 2018 – <span itemprop="copyrightYear">2020</span>
+  <span class="with-love" id="animate">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">lhf2018</span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io" class="theme-link" rel="noopener" target="_blank">Hexo</a> 强力驱动</div>
+  <span class="post-meta-divider">|</span>
+  <div class="theme-info">主题 – <a href="https://theme-next.org" class="theme-link" rel="noopener" target="_blank">NexT.Mist</a></div>
+
+        
+<div class="busuanzi-count">
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-user"></i>
+    </span>
+    <span class="site-uv" title="总访客量">
+      <span class="busuanzi-value" id="busuanzi_value_site_uv"></span>
+    </span>
+  
+    <span class="post-meta-divider">|</span>
+  
+    <span class="post-meta-item-icon">
+      <i class="fa fa-eye"></i>
+    </span>
+    <span class="site-pv" title="总访问量">
+      <span class="busuanzi-value" id="busuanzi_value_site_pv"></span>
+    </span>
+  
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+  </div>
+
+  
+
+
+    
+  
+  <script color='0,0,255' opacity='0.5' zIndex='-1' count='99' src="/lib/canvas-nest/canvas-nest.min.js"></script>
+  <script src="/lib/anime.min.js?v=3.1.0"></script>
+  <script src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+  <script src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+<script src="/js/utils.js?v=7.4.0"></script><script src="/js/motion.js?v=7.4.0"></script>
+<script src="/js/schemes/muse.js?v=7.4.0"></script>
+
+<script src="/js/next-boot.js?v=7.4.0"></script>
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+  
+
+
+<script>
+NexT.utils.getScript('//unpkg.com/valine/dist/Valine.min.js', () => {
+  var GUEST = ['nick', 'mail', 'link'];
+  var guest = 'nick,mail,link';
+  guest = guest.split(',').filter(item => {
+    return GUEST.includes(item);
+  });
+  new Valine({
+    el: '#comments',
+    verify: false,
+    notify: false,
+    appId: 'sTlKRrcEUB2x5fvFyGXHhRG3-gzGzoHsz',
+    appKey: 'cWdqk79BaXeQSmekHDFYAzT0',
+    placeholder: 'Just go go',
+    avatar: 'mm',
+    meta: guest,
+    pageSize: '10' || 10,
+    visitor: true,
+    lang: 'zh-cn' || 'zh-cn',
+    path: location.pathname
+  });
+}, window.Valine);
+</script>
+
+  
+
+  <script src="https://cdn.jsdelivr.net/npm/moment@2.22.2/moment.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/moment-precise-range-plugin@1.3.0/moment-precise-range.min.js"></script>
+  <script>
+    function timer() {
+      var ages = moment.preciseDiff(moment(),moment(20190701,"YYYYMMDD"));
+      ages = ages.replace(/years?/, "年");
+      ages = ages.replace(/months?/, "月");
+      ages = ages.replace(/days?/, "天");
+      ages = ages.replace(/hours?/, "小时");
+      ages = ages.replace(/minutes?/, "分");
+      ages = ages.replace(/seconds?/, "秒");
+      ages = ages.replace(/\d+/g, '<span style="color:#1890ff">$&</span>');
+      div.innerHTML = `我已在此等候你 ${ages}`;
+    }
+    var div = document.createElement("div");
+    //插入到copyright之后
+    var copyright = document.querySelector(".copyright");
+    document.querySelector(".footer-inner").insertBefore(div, copyright.nextSibling);
+    timer();
+    setInterval("timer()",1000)
+  </script>
+
+</body>
+</html>

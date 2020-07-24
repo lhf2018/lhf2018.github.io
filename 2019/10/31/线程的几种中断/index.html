@@ -1,0 +1,686 @@
+<!DOCTYPE html>
+
+
+
+
+
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 3.9.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png?v=7.4.0">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png?v=7.4.0">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png?v=7.4.0">
+  <link rel="mask-icon" href="/images/logo.svg?v=7.4.0" color="#222">
+
+<link rel="stylesheet" href="/css/main.css?v=7.4.0">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css?v=4.7.0">
+  <link rel="stylesheet" href="/lib/pace/pace-theme-minimal.min.css?v=1.0.2">
+  <script src="/lib/pace/pace.min.js?v=1.0.2"></script>
+
+
+<script id="hexo-configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Mist',
+    version: '7.4.0',
+    exturl: false,
+    sidebar: {"position":"left","display":"post","offset":12,"onmobile":false},
+    copycode: {"enable":false,"show_result":false,"style":null},
+    back2top: {"enable":true,"sidebar":false,"scrollpercent":false},
+    bookmark: {"enable":false,"color":"#222","save":"auto"},
+    fancybox: false,
+    mediumzoom: false,
+    lazyload: false,
+    pangu: false,
+    algolia: {
+      appID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    },
+    localsearch: {"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},
+    path: '',
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    translation: {
+      copy_button: '复制',
+      copy_success: '复制成功',
+      copy_failure: '复制失败'
+    },
+    sidebarPadding: 40
+  };
+</script>
+
+  <meta name="description" content="1. InterruptedException当阻塞方法收到中断请求的时候就会抛出InterruptedException异常。通过调用一个线程的 interrupt() 来中断该线程，如果该线程处于阻塞、限期等待或者无限期等待状态，那么就会抛出 InterruptedException，从而提前结束该线程。">
+<meta name="keywords" content="Java基础,多线程">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Java线程的几种中断">
+<meta property="og:url" content="http://yoursite.com/2019/10/31/线程的几种中断/index.html">
+<meta property="og:site_name" content="lhfly">
+<meta property="og:description" content="1. InterruptedException当阻塞方法收到中断请求的时候就会抛出InterruptedException异常。通过调用一个线程的 interrupt() 来中断该线程，如果该线程处于阻塞、限期等待或者无限期等待状态，那么就会抛出 InterruptedException，从而提前结束该线程。">
+<meta property="og:locale" content="zh-CN">
+<meta property="og:updated_time" content="2019-10-31T06:20:42.024Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Java线程的几种中断">
+<meta name="twitter:description" content="1. InterruptedException当阻塞方法收到中断请求的时候就会抛出InterruptedException异常。通过调用一个线程的 interrupt() 来中断该线程，如果该线程处于阻塞、限期等待或者无限期等待状态，那么就会抛出 InterruptedException，从而提前结束该线程。">
+  <link rel="canonical" href="http://yoursite.com/2019/10/31/线程的几种中断/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome: false,
+    isPost: true,
+    isPage: false,
+    isArchive: false
+  };
+</script>
+
+  <title>Java线程的几种中断 | lhfly</title>
+  
+
+
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .logo,
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-CN">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-meta">
+
+    <div>
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">lhfly</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+  </div>
+
+  <div class="site-nav-toggle">
+    <button aria-label="切换导航栏">
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+
+<nav class="site-nav">
+  
+  <ul id="menu" class="menu">
+      
+      
+      
+        
+        <li class="menu-item menu-item-home">
+      
+    
+
+    <a href="/" rel="section"><i class="menu-item-icon fa fa-fw fa-home"></i> <br>首页</a>
+
+  </li>
+      
+      
+      
+        
+        <li class="menu-item menu-item-about">
+      
+    
+
+    <a href="/about/" rel="section"><i class="menu-item-icon fa fa-fw fa-user"></i> <br>关于</a>
+
+  </li>
+      
+      
+      
+        
+        <li class="menu-item menu-item-tags">
+      
+    
+
+    <a href="/tags/" rel="section"><i class="menu-item-icon fa fa-fw fa-tags"></i> <br>标签</a>
+
+  </li>
+      
+      
+      
+        
+        <li class="menu-item menu-item-categories">
+      
+    
+
+    <a href="/categories/" rel="section"><i class="menu-item-icon fa fa-fw fa-th"></i> <br>分类</a>
+
+  </li>
+      
+      
+      
+        
+        <li class="menu-item menu-item-archives">
+      
+    
+
+    <a href="/archives/" rel="section"><i class="menu-item-icon fa fa-fw fa-archive"></i> <br>归档</a>
+
+  </li>
+  </ul>
+
+    
+
+</nav>
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+      <article itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block post">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2019/10/31/线程的几种中断/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="lhf2018">
+      <meta itemprop="description" content="热爱技术，热爱生活">
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="lhfly">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">Java线程的几种中断
+
+          
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              
+                
+              
+
+              <time title="创建时间：2019-10-31 10:23:13 / 修改时间：14:20:42" itemprop="dateCreated datePublished" datetime="2019-10-31T10:23:13+08:00">2019-10-31</time>
+            </span>
+          
+            
+
+            
+          
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing"><a href="/categories/多线程/" itemprop="url" rel="index"><span itemprop="name">多线程</span></a></span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            <span id="/2019/10/31/线程的几种中断/" class="post-meta-item leancloud_visitors" data-flag-title="Java线程的几种中断" title="阅读次数">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-eye"></i>
+              </span>
+              <span class="post-meta-item-text">阅读次数：</span>
+              <span class="leancloud-visitors-count"></span>
+            </span>
+          
+  
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="fa fa-comment-o"></i>
+      </span>
+        
+      
+      <span class="post-meta-item-text">Valine：</span>
+    
+    <a title="valine" href="/2019/10/31/线程的几种中断/#comments" itemprop="discussionUrl"><span class="post-comments-count valine-comment-count" data-xid="/2019/10/31/线程的几种中断/" itemprop="commentCount"></span></a>
+  </span>
+  
+  
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <h4 id="1-InterruptedException"><a href="#1-InterruptedException" class="headerlink" title="1. InterruptedException"></a>1. InterruptedException</h4><p>当阻塞方法收到中断请求的时候就会抛出InterruptedException异常。<br>通过调用一个线程的 interrupt() 来中断该线程，如果该线程处于阻塞、限期等待或者无限期等待状态，那么就会抛出 InterruptedException，从而提前结束该线程。</p><a id="more"></a>
+<h5 id="代码"><a href="#代码" class="headerlink" title="代码"></a>代码</h5><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">InterruptExample</span></span>&#123;</span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">static</span> <span class="class"><span class="keyword">class</span> <span class="title">MyThread</span> <span class="keyword">extends</span> <span class="title">Thread</span></span>&#123;</span><br><span class="line">        <span class="meta">@Override</span></span><br><span class="line">        <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">run</span><span class="params">()</span> </span>&#123;</span><br><span class="line">            <span class="keyword">try</span> &#123;</span><br><span class="line">                Thread.sleep(<span class="number">2000</span>);</span><br><span class="line">                System.out.println(<span class="string">"Thread run"</span>);</span><br><span class="line">            &#125; <span class="keyword">catch</span> (Exception e) &#123;</span><br><span class="line">                e.printStackTrace();</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title">main</span><span class="params">(String[] args)</span> </span>&#123;</span><br><span class="line">        Thread thread=<span class="keyword">new</span> Thread(<span class="keyword">new</span> MyThread());</span><br><span class="line">        thread.start();</span><br><span class="line">        thread.interrupt();</span><br><span class="line">        System.out.println(<span class="string">"Main run"</span>);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h5 id="输出结果"><a href="#输出结果" class="headerlink" title="输出结果"></a>输出结果</h5><figure class="highlight stylus"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">Main run</span><br><span class="line">java<span class="selector-class">.lang</span><span class="selector-class">.InterruptedException</span>: sleep interrupted</span><br><span class="line">	at java<span class="selector-class">.lang</span><span class="selector-class">.Thread</span><span class="selector-class">.sleep</span>(Native Method)</span><br><span class="line">	at InterruptExample<span class="variable">$MyThread</span>.run(InterruptExample<span class="selector-class">.java</span>:<span class="number">6</span>)</span><br><span class="line">	at java<span class="selector-class">.lang</span><span class="selector-class">.Thread</span><span class="selector-class">.run</span>(Unknown Source)</span><br></pre></td></tr></table></figure>
+
+<p>线程在调用<code>interrupt()</code>时，<code>thread</code>还在sleep中，所以会抛出<code>InterruptedException</code>，同时结束线程，这也线程就不会执行剩下的<code>Thread run</code>命令</p>
+<h4 id="2-interrupted"><a href="#2-interrupted" class="headerlink" title="2. interrupted()"></a>2. interrupted()</h4><p>interrupt() 并不能真正的中断线程，需要被调用的线程自己进行配合才行,如果一个线程有中断需求，就经常检查自己的中断标志位，如果被设置了中断标志就中止线程。线程使用interrupted()检查是否线程处于中断状态。</p>
+<h5 id="代码-1"><a href="#代码-1" class="headerlink" title="代码"></a>代码</h5><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">InterruptExample</span></span>&#123;</span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">static</span> <span class="class"><span class="keyword">class</span> <span class="title">MyThread</span> <span class="keyword">extends</span> <span class="title">Thread</span></span>&#123;</span><br><span class="line">        <span class="meta">@Override</span></span><br><span class="line">        <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">run</span><span class="params">()</span> </span>&#123;</span><br><span class="line">            <span class="keyword">while</span>(!interrupted())&#123;</span><br><span class="line"></span><br><span class="line">            &#125;</span><br><span class="line">            System.out.println(<span class="string">"Thread end"</span>);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title">main</span><span class="params">(String[] args)</span> </span>&#123;</span><br><span class="line">        Thread thread=<span class="keyword">new</span> Thread(<span class="keyword">new</span> MyThread());</span><br><span class="line">        thread.start();</span><br><span class="line">        thread.interrupt();</span><br><span class="line">        System.out.println(<span class="string">"Main run"</span>);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h5 id="输出结果-1"><a href="#输出结果-1" class="headerlink" title="输出结果"></a>输出结果</h5><figure class="highlight applescript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">Main <span class="built_in">run</span></span><br><span class="line">Thread <span class="keyword">end</span></span><br></pre></td></tr></table></figure>
+
+<h4 id="3-Executor-的中断操作"><a href="#3-Executor-的中断操作" class="headerlink" title="3. Executor 的中断操作"></a>3. Executor 的中断操作</h4><p>调用 Executor 的 shutdown() 方法会等待线程都执行完毕之后再关闭，但是如果调用的是 shutdownNow() 方法，则相当于调用每个线程的 interrupt() 方法。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">MyThread</span> <span class="keyword">implements</span> <span class="title">Runnable</span></span>&#123;</span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">        <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">run</span><span class="params">()</span> </span>&#123;</span><br><span class="line">            <span class="keyword">try</span> &#123;</span><br><span class="line">                Thread.sleep(<span class="number">2000</span>);</span><br><span class="line">                System.out.println(<span class="string">"Thread running"</span>);</span><br><span class="line">            &#125; <span class="keyword">catch</span> (Exception e) &#123;</span><br><span class="line">                <span class="comment">//<span class="doctag">TODO:</span> handle exception</span></span><br><span class="line">                e.printStackTrace();</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title">main</span><span class="params">(String[] args)</span> </span>&#123;</span><br><span class="line">        ExecutorService executorService=Executors.newCachedThreadPool();</span><br><span class="line">        <span class="keyword">for</span>(<span class="keyword">int</span> i=<span class="number">0</span>;i&lt;<span class="number">5</span>;i++)&#123;</span><br><span class="line">            executorService.execute(<span class="keyword">new</span> MyThread());</span><br><span class="line">        &#125;</span><br><span class="line">        executorService.shutdown();</span><br><span class="line">        System.out.println(<span class="string">"Main end"</span>);</span><br><span class="line">        </span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h5 id="输出"><a href="#输出" class="headerlink" title="输出"></a>输出</h5><figure class="highlight applescript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">Main <span class="keyword">end</span></span><br><span class="line">Thread <span class="built_in">running</span></span><br><span class="line">Thread <span class="built_in">running</span></span><br><span class="line">Thread <span class="built_in">running</span></span><br><span class="line">Thread <span class="built_in">running</span></span><br><span class="line">Thread <span class="built_in">running</span></span><br></pre></td></tr></table></figure>
+
+<p>如果把<code>executorService.shutdown();</code><br>换成<code>executorService.shutdownNow();</code></p>
+<h5 id="输出-1"><a href="#输出-1" class="headerlink" title="输出"></a>输出</h5><figure class="highlight oxygene"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br></pre></td><td class="code"><pre><span class="line">Main <span class="keyword">end</span></span><br><span class="line">java.lang.InterruptedException: sleep interrupted</span><br><span class="line">	at java.lang.Thread.sleep(Native <span class="function"><span class="keyword">Method</span>)</span></span><br><span class="line"><span class="function">	<span class="title">at</span> <span class="title">MyThread</span>.<span class="title">run</span><span class="params">(MyThread.java:8)</span></span></span><br><span class="line"><span class="function">	<span class="title">at</span> <span class="title">java</span>.<span class="title">util</span>.<span class="title">concurrent</span>.<span class="title">ThreadPoolExecutor</span>.<span class="title">runWorker</span><span class="params">(Unknown Source)</span></span></span><br><span class="line"><span class="function">	<span class="title">at</span> <span class="title">java</span>.<span class="title">util</span>.<span class="title">concurrent</span>.<span class="title">ThreadPoolExecutor</span>$<span class="title">Worker</span>.<span class="title">run</span><span class="params">(Unknown Source)</span></span></span><br><span class="line"><span class="function">	<span class="title">at</span> <span class="title">java</span>.<span class="title">lang</span>.<span class="title">Thread</span>.<span class="title">run</span><span class="params">(Unknown Source)</span></span></span><br><span class="line"><span class="function"><span class="title">java</span>.<span class="title">lang</span>.<span class="title">InterruptedException</span>:</span> sleep interrupted</span><br><span class="line">	at java.lang.Thread.sleep(Native <span class="function"><span class="keyword">Method</span>)</span></span><br><span class="line"><span class="function">	<span class="title">at</span> <span class="title">MyThread</span>.<span class="title">run</span><span class="params">(MyThread.java:8)</span></span></span><br><span class="line"><span class="function">	<span class="title">at</span> <span class="title">java</span>.<span class="title">util</span>.<span class="title">concurrent</span>.<span class="title">ThreadPoolExecutor</span>.<span class="title">runWorker</span><span class="params">(Unknown Source)</span></span></span><br><span class="line"><span class="function">	<span class="title">at</span> <span class="title">java</span>.<span class="title">util</span>.<span class="title">concurrent</span>.<span class="title">ThreadPoolExecutor</span>$<span class="title">Worker</span>.<span class="title">run</span><span class="params">(Unknown Source)</span></span></span><br><span class="line"><span class="function">	<span class="title">at</span> <span class="title">java</span>.<span class="title">lang</span>.<span class="title">Thread</span>.<span class="title">run</span><span class="params">(Unknown Source)</span></span></span><br><span class="line"><span class="function"><span class="title">java</span>.<span class="title">lang</span>.<span class="title">InterruptedException</span>:</span> sleep interrupted</span><br><span class="line">	at java.lang.Thread.sleep(Native <span class="function"><span class="keyword">Method</span>)</span></span><br><span class="line"><span class="function">	<span class="title">at</span> <span class="title">MyThread</span>.<span class="title">run</span><span class="params">(MyThread.java:8)</span></span></span><br><span class="line"><span class="function">	<span class="title">at</span> <span class="title">java</span>.<span class="title">util</span>.<span class="title">concurrent</span>.<span class="title">ThreadPoolExecutor</span>.<span class="title">runWorker</span><span class="params">(Unknown Source)</span></span></span><br><span class="line"><span class="function">	<span class="title">at</span> <span class="title">java</span>.<span class="title">util</span>.<span class="title">concurrent</span>.<span class="title">ThreadPoolExecutor</span>$<span class="title">Worker</span>.<span class="title">run</span><span class="params">(Unknown Source)</span></span></span><br><span class="line"><span class="function">	<span class="title">at</span> <span class="title">java</span>.<span class="title">lang</span>.<span class="title">Thread</span>.<span class="title">run</span><span class="params">(Unknown Source)</span></span></span><br><span class="line"><span class="function"><span class="title">java</span>.<span class="title">lang</span>.<span class="title">InterruptedException</span>:</span> sleep interrupted</span><br><span class="line">	at java.lang.Thread.sleep(Native <span class="function"><span class="keyword">Method</span>)</span></span><br><span class="line"><span class="function">	<span class="title">at</span> <span class="title">MyThread</span>.<span class="title">run</span><span class="params">(MyThread.java:8)</span></span></span><br><span class="line"><span class="function">	<span class="title">at</span> <span class="title">java</span>.<span class="title">util</span>.<span class="title">concurrent</span>.<span class="title">ThreadPoolExecutor</span>.<span class="title">runWorker</span><span class="params">(Unknown Source)</span></span></span><br><span class="line"><span class="function">	<span class="title">at</span> <span class="title">java</span>.<span class="title">util</span>.<span class="title">concurrent</span>.<span class="title">ThreadPoolExecutor</span>$<span class="title">Worker</span>.<span class="title">run</span><span class="params">(Unknown Source)</span></span></span><br><span class="line"><span class="function">	<span class="title">at</span> <span class="title">java</span>.<span class="title">lang</span>.<span class="title">Thread</span>.<span class="title">run</span><span class="params">(Unknown Source)</span></span></span><br><span class="line"><span class="function"><span class="title">java</span>.<span class="title">lang</span>.<span class="title">InterruptedException</span>:</span> sleep interrupted</span><br><span class="line">	at java.lang.Thread.sleep(Native <span class="function"><span class="keyword">Method</span>)</span></span><br><span class="line"><span class="function">	<span class="title">at</span> <span class="title">MyThread</span>.<span class="title">run</span><span class="params">(MyThread.java:8)</span></span></span><br><span class="line"><span class="function">	<span class="title">at</span> <span class="title">java</span>.<span class="title">util</span>.<span class="title">concurrent</span>.<span class="title">ThreadPoolExecutor</span>.<span class="title">runWorker</span><span class="params">(Unknown Source)</span></span></span><br><span class="line"><span class="function">	<span class="title">at</span> <span class="title">java</span>.<span class="title">util</span>.<span class="title">concurrent</span>.<span class="title">ThreadPoolExecutor</span>$<span class="title">Worker</span>.<span class="title">run</span><span class="params">(Unknown Source)</span></span></span><br><span class="line"><span class="function">	<span class="title">at</span> <span class="title">java</span>.<span class="title">lang</span>.<span class="title">Thread</span>.<span class="title">run</span><span class="params">(Unknown Source)</span></span></span><br></pre></td></tr></table></figure>
+
+<p>Executor中断一个线程<br>使用<code>submit</code>方法它会返回一个 <code>Future&lt;?&gt;</code>对象，通过调用该对象的 <code>cancel(true)</code> 方法就可以中断线程。</p>
+<h5 id="代码-2"><a href="#代码-2" class="headerlink" title="代码"></a>代码</h5><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">MyThread</span> <span class="keyword">implements</span> <span class="title">Runnable</span></span>&#123;</span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">        <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">run</span><span class="params">()</span> </span>&#123;</span><br><span class="line">            <span class="keyword">try</span> &#123;</span><br><span class="line">                Thread.sleep(<span class="number">2000</span>);</span><br><span class="line">                System.out.println(<span class="string">"Thread running"</span>);</span><br><span class="line">            &#125; <span class="keyword">catch</span> (Exception e) &#123;</span><br><span class="line">                <span class="comment">//<span class="doctag">TODO:</span> handle exception</span></span><br><span class="line">                e.printStackTrace();</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title">main</span><span class="params">(String[] args)</span> </span>&#123;</span><br><span class="line">        ExecutorService executorService=Executors.newCachedThreadPool();</span><br><span class="line">        Future&lt;?&gt; future = executorService.submit(<span class="keyword">new</span> MyThread());</span><br><span class="line">        future.cancel(<span class="keyword">true</span>);</span><br><span class="line">        System.out.println(<span class="string">"Main end"</span>);</span><br><span class="line">        </span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h5 id="输出-2"><a href="#输出-2" class="headerlink" title="输出"></a>输出</h5><figure class="highlight ada"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">Main <span class="keyword">end</span></span><br></pre></td></tr></table></figure>
+    </div>
+
+    
+    
+    
+        
+      
+
+      <footer class="post-footer">
+	  <div>    
+		 
+		 
+		<ul class="post-copyright">
+		  <li class="post-copyright-author">
+			  <strong>本文作者：</strong>lhf2018
+		  </li>
+		  <li class="post-copyright-link">
+			<strong>本文链接：</strong>
+			<a href="/2019/10/31/线程的几种中断/" title="Java线程的几种中断">2019/10/31/线程的几种中断/</a>
+		  </li>
+		  <li class="post-copyright-license">
+			<strong>版权： </strong>
+			本站文章均采用 <a href="http://creativecommons.org/licenses/by-nc-sa/3.0/cn/" rel="external nofollow" target="_blank">CC BY-NC-SA 3.0 CN</a> 许可协议，请勿用于商业，转载注明出处！
+		  </li>
+		</ul>
+		
+		</div>
+          
+            
+          
+          <div class="post-tags">
+            
+              <a href="/tags/Java基础/" rel="tag"># Java基础</a>
+            
+              <a href="/tags/多线程/" rel="tag"># 多线程</a>
+            
+          </div>
+        
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-next post-nav-item">
+              
+                <a href="/2019/10/29/编译器基础：Java编译器的输入系统/" rel="next" title="编译器基础：浅析Java编译器的输入系统">
+                  <i class="fa fa-chevron-left"></i> 编译器基础：浅析Java编译器的输入系统
+                </a>
+              
+            </div>
+
+            <span class="post-nav-divider"></span>
+
+            <div class="post-nav-prev post-nav-item">
+              
+                <a href="/2019/11/03/Java中的自旋锁、偏向锁、轻量级锁、重量级锁/" rel="prev" title="Java中的自旋锁、偏向锁、轻量级锁、重量级锁">
+                  Java中的自旋锁、偏向锁、轻量级锁、重量级锁 <i class="fa fa-chevron-right"></i>
+                </a>
+              
+            </div>
+          </div>
+        
+      </footer>
+    
+  </div>
+  
+  
+  
+  </article>
+
+  </div>
+
+
+          </div>
+          
+    
+    <div class="comments" id="comments"></div>
+  
+
+        </div>
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+        
+        
+        
+        
+      
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-4"><a class="nav-link" href="#1-InterruptedException"><span class="nav-number">1.</span> <span class="nav-text">1. InterruptedException</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#代码"><span class="nav-number">1.1.</span> <span class="nav-text">代码</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#输出结果"><span class="nav-number">1.2.</span> <span class="nav-text">输出结果</span></a></li></ol></li><li class="nav-item nav-level-4"><a class="nav-link" href="#2-interrupted"><span class="nav-number">2.</span> <span class="nav-text">2. interrupted()</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#代码-1"><span class="nav-number">2.1.</span> <span class="nav-text">代码</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#输出结果-1"><span class="nav-number">2.2.</span> <span class="nav-text">输出结果</span></a></li></ol></li><li class="nav-item nav-level-4"><a class="nav-link" href="#3-Executor-的中断操作"><span class="nav-number">3.</span> <span class="nav-text">3. Executor 的中断操作</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#输出"><span class="nav-number">3.1.</span> <span class="nav-text">输出</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#输出-1"><span class="nav-number">3.2.</span> <span class="nav-text">输出</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#代码-2"><span class="nav-number">3.3.</span> <span class="nav-text">代码</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#输出-2"><span class="nav-number">3.4.</span> <span class="nav-text">输出</span></a></li></ol></li></ol></div>
+        
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">lhf2018</p>
+  <div class="site-description" itemprop="description">热爱技术，热爱生活</div>
+</div>
+  <nav class="site-state motion-element">
+      <div class="site-state-item site-state-posts">
+        
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">28</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+    
+      
+      
+      <div class="site-state-item site-state-categories">
+        
+          
+            <a href="/categories/">
+          
+        
+        <span class="site-state-item-count">20</span>
+        <span class="site-state-item-name">分类</span>
+        </a>
+      </div>
+    
+      
+      
+      <div class="site-state-item site-state-tags">
+        
+          
+            <a href="/tags/">
+          
+        
+        <span class="site-state-item-count">33</span>
+        <span class="site-state-item-name">标签</span>
+        </a>
+      </div>
+    
+  </nav>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+      
+      
+        
+      
+      
+        
+      
+        <a href="https://github.com/lhf2018" title="GitHub &rarr; https://github.com/lhf2018" rel="noopener" target="_blank"><i class="fa fa-fw fa-github"></i>GitHub</a>
+      </span>
+    
+      <span class="links-of-author-item">
+      
+      
+        
+      
+      
+        
+      
+        <a href="mailto:1146953160@qq.com" title="E-Mail &rarr; mailto:1146953160@qq.com" rel="noopener" target="_blank"><i class="fa fa-fw fa-envelope"></i>E-Mail</a>
+      </span>
+    
+      <span class="links-of-author-item">
+      
+      
+        
+      
+      
+        
+      
+        <a href="https://blog.csdn.net/weixin_44128511" title="CSDN &rarr; https://blog.csdn.net/weixin_44128511" rel="noopener" target="_blank"><i class="fa fa-fw fa-globe"></i>CSDN</a>
+      </span>
+    
+  </div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <script async src="https://dn-lbstatics.qbox.me/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+<div class="copyright">&copy; 2018 – <span itemprop="copyrightYear">2020</span>
+  <span class="with-love" id="animate">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">lhf2018</span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io" class="theme-link" rel="noopener" target="_blank">Hexo</a> 强力驱动</div>
+  <span class="post-meta-divider">|</span>
+  <div class="theme-info">主题 – <a href="https://theme-next.org" class="theme-link" rel="noopener" target="_blank">NexT.Mist</a></div>
+
+        
+<div class="busuanzi-count">
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-user"></i>
+    </span>
+    <span class="site-uv" title="总访客量">
+      <span class="busuanzi-value" id="busuanzi_value_site_uv"></span>
+    </span>
+  
+    <span class="post-meta-divider">|</span>
+  
+    <span class="post-meta-item-icon">
+      <i class="fa fa-eye"></i>
+    </span>
+    <span class="site-pv" title="总访问量">
+      <span class="busuanzi-value" id="busuanzi_value_site_pv"></span>
+    </span>
+  
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+  </div>
+
+  
+
+
+    
+  
+  <script color='0,0,255' opacity='0.5' zIndex='-1' count='99' src="/lib/canvas-nest/canvas-nest.min.js"></script>
+  <script src="/lib/anime.min.js?v=3.1.0"></script>
+  <script src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+  <script src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+<script src="/js/utils.js?v=7.4.0"></script><script src="/js/motion.js?v=7.4.0"></script>
+<script src="/js/schemes/muse.js?v=7.4.0"></script>
+
+<script src="/js/next-boot.js?v=7.4.0"></script>
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+  
+
+
+<script>
+NexT.utils.getScript('//unpkg.com/valine/dist/Valine.min.js', () => {
+  var GUEST = ['nick', 'mail', 'link'];
+  var guest = 'nick,mail,link';
+  guest = guest.split(',').filter(item => {
+    return GUEST.includes(item);
+  });
+  new Valine({
+    el: '#comments',
+    verify: false,
+    notify: false,
+    appId: 'sTlKRrcEUB2x5fvFyGXHhRG3-gzGzoHsz',
+    appKey: 'cWdqk79BaXeQSmekHDFYAzT0',
+    placeholder: 'Just go go',
+    avatar: 'mm',
+    meta: guest,
+    pageSize: '10' || 10,
+    visitor: true,
+    lang: 'zh-cn' || 'zh-cn',
+    path: location.pathname
+  });
+}, window.Valine);
+</script>
+
+  
+
+  <script src="https://cdn.jsdelivr.net/npm/moment@2.22.2/moment.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/moment-precise-range-plugin@1.3.0/moment-precise-range.min.js"></script>
+  <script>
+    function timer() {
+      var ages = moment.preciseDiff(moment(),moment(20190701,"YYYYMMDD"));
+      ages = ages.replace(/years?/, "年");
+      ages = ages.replace(/months?/, "月");
+      ages = ages.replace(/days?/, "天");
+      ages = ages.replace(/hours?/, "小时");
+      ages = ages.replace(/minutes?/, "分");
+      ages = ages.replace(/seconds?/, "秒");
+      ages = ages.replace(/\d+/g, '<span style="color:#1890ff">$&</span>');
+      div.innerHTML = `我已在此等候你 ${ages}`;
+    }
+    var div = document.createElement("div");
+    //插入到copyright之后
+    var copyright = document.querySelector(".copyright");
+    document.querySelector(".footer-inner").insertBefore(div, copyright.nextSibling);
+    timer();
+    setInterval("timer()",1000)
+  </script>
+
+</body>
+</html>
