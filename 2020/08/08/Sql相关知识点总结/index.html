@@ -1,0 +1,693 @@
+<!DOCTYPE html>
+
+
+
+
+
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 3.9.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png?v=7.4.0">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png?v=7.4.0">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png?v=7.4.0">
+  <link rel="mask-icon" href="/images/logo.svg?v=7.4.0" color="#222">
+
+<link rel="stylesheet" href="/css/main.css?v=7.4.0">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css?v=4.7.0">
+  <link rel="stylesheet" href="/lib/pace/pace-theme-minimal.min.css?v=1.0.2">
+  <script src="/lib/pace/pace.min.js?v=1.0.2"></script>
+
+
+<script id="hexo-configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Mist',
+    version: '7.4.0',
+    exturl: false,
+    sidebar: {"position":"left","display":"post","offset":12,"onmobile":false},
+    copycode: {"enable":false,"show_result":false,"style":null},
+    back2top: {"enable":true,"sidebar":false,"scrollpercent":false},
+    bookmark: {"enable":false,"color":"#222","save":"auto"},
+    fancybox: false,
+    mediumzoom: false,
+    lazyload: false,
+    pangu: false,
+    algolia: {
+      appID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    },
+    localsearch: {"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},
+    path: '',
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    translation: {
+      copy_button: '复制',
+      copy_success: '复制成功',
+      copy_failure: '复制失败'
+    },
+    sidebarPadding: 40
+  };
+</script>
+
+  <meta name="description" content="本文整理了一些常见的sql知识点（包括博客链接整理）如何查找MySQL中查询慢的SQL语句如何查找MySQL中查询慢的SQL语句">
+<meta name="keywords" content="数据库">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Sql相关知识点总结">
+<meta property="og:url" content="http://yoursite.com/2020/08/08/Sql相关知识点总结/index.html">
+<meta property="og:site_name" content="lhfly">
+<meta property="og:description" content="本文整理了一些常见的sql知识点（包括博客链接整理）如何查找MySQL中查询慢的SQL语句如何查找MySQL中查询慢的SQL语句">
+<meta property="og:locale" content="zh-CN">
+<meta property="og:updated_time" content="2020-08-12T09:52:35.906Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Sql相关知识点总结">
+<meta name="twitter:description" content="本文整理了一些常见的sql知识点（包括博客链接整理）如何查找MySQL中查询慢的SQL语句如何查找MySQL中查询慢的SQL语句">
+  <link rel="canonical" href="http://yoursite.com/2020/08/08/Sql相关知识点总结/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome: false,
+    isPost: true,
+    isPage: false,
+    isArchive: false
+  };
+</script>
+
+  <title>Sql相关知识点总结 | lhfly</title>
+  
+
+
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .logo,
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-CN">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-meta">
+
+    <div>
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">lhfly</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+  </div>
+
+  <div class="site-nav-toggle">
+    <button aria-label="切换导航栏">
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+
+<nav class="site-nav">
+  
+  <ul id="menu" class="menu">
+      
+      
+      
+        
+        <li class="menu-item menu-item-home">
+      
+    
+
+    <a href="/" rel="section"><i class="menu-item-icon fa fa-fw fa-home"></i> <br>首页</a>
+
+  </li>
+      
+      
+      
+        
+        <li class="menu-item menu-item-about">
+      
+    
+
+    <a href="/about/" rel="section"><i class="menu-item-icon fa fa-fw fa-user"></i> <br>关于</a>
+
+  </li>
+      
+      
+      
+        
+        <li class="menu-item menu-item-tags">
+      
+    
+
+    <a href="/tags/" rel="section"><i class="menu-item-icon fa fa-fw fa-tags"></i> <br>标签</a>
+
+  </li>
+      
+      
+      
+        
+        <li class="menu-item menu-item-categories">
+      
+    
+
+    <a href="/categories/" rel="section"><i class="menu-item-icon fa fa-fw fa-th"></i> <br>分类</a>
+
+  </li>
+      
+      
+      
+        
+        <li class="menu-item menu-item-archives">
+      
+    
+
+    <a href="/archives/" rel="section"><i class="menu-item-icon fa fa-fw fa-archive"></i> <br>归档</a>
+
+  </li>
+  </ul>
+
+    
+
+</nav>
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+      <article itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block post">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2020/08/08/Sql相关知识点总结/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="lhf2018">
+      <meta itemprop="description" content="热爱技术，也一直热爱生活">
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="lhfly">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">Sql相关知识点总结
+
+          
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              
+                
+              
+
+              <time title="创建时间：2020-08-08 11:50:50" itemprop="dateCreated datePublished" datetime="2020-08-08T11:50:50+08:00">2020-08-08</time>
+            </span>
+          
+            
+
+            
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-calendar-check-o"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2020-08-12 17:52:35" itemprop="dateModified" datetime="2020-08-12T17:52:35+08:00">2020-08-12</time>
+              </span>
+            
+          
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing"><a href="/categories/数据库/" itemprop="url" rel="index"><span itemprop="name">数据库</span></a></span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            <span id="/2020/08/08/Sql相关知识点总结/" class="post-meta-item leancloud_visitors" data-flag-title="Sql相关知识点总结" title="阅读次数">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-eye"></i>
+              </span>
+              <span class="post-meta-item-text">阅读次数：</span>
+              <span class="leancloud-visitors-count"></span>
+            </span>
+          
+  
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="fa fa-comment-o"></i>
+      </span>
+        
+      
+      <span class="post-meta-item-text">Valine：</span>
+    
+    <a title="valine" href="/2020/08/08/Sql相关知识点总结/#comments" itemprop="discussionUrl"><span class="post-comments-count valine-comment-count" data-xid="/2020/08/08/Sql相关知识点总结/" itemprop="commentCount"></span></a>
+  </span>
+  
+  
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <p>本文整理了一些常见的sql知识点（包括博客链接整理）</p><h3 id="如何查找MySQL中查询慢的SQL语句"><a href="#如何查找MySQL中查询慢的SQL语句" class="headerlink" title="如何查找MySQL中查询慢的SQL语句"></a>如何查找MySQL中查询慢的SQL语句</h3><p><a href="https://www.cnblogs.com/qmfsun/p/4844472.html" target="_blank" rel="noopener">如何查找MySQL中查询慢的SQL语句</a></p><a id="more"></a>
+
+<h3 id="慢查询的原因"><a href="#慢查询的原因" class="headerlink" title="慢查询的原因"></a>慢查询的原因</h3><ul>
+<li>没有索引或者没有用到索引(这是查询慢最常见的问题，是程序设计的缺陷)</li>
+<li>I/O吞吐量小，形成了瓶颈效应。</li>
+<li>没有创建计算列导致查询不优化。</li>
+<li>内存不足</li>
+<li>网络速度慢</li>
+<li>查询出的数据量过大(可以采用多次查询，其他的方法降低数据量)</li>
+<li>锁或者死锁(这也是查询慢最常见的问题，是程序设计的缺陷)</li>
+<li>sp_lock,sp_who,活动的用户查看,原因是读写竞争资源。</li>
+<li>返回了不必要的行和列</li>
+<li>查询语句不好，没有优化</li>
+</ul>
+<h3 id="慢查询的解决办法"><a href="#慢查询的解决办法" class="headerlink" title="慢查询的解决办法"></a>慢查询的解决办法</h3><p>1.把数据、日志、索引放到不同的I/O设备上，增加读取速度，以前可以将Tempdb应放在RAID0上，SQL2000不在支持。数据量（尺寸）越大，提高I/O越重要<br>2.纵向、横向分割表，减少表的尺寸<br>3.升级硬件<br>4.根据查询条件,建立索引,优化索引、优化访问方式，限制结果集的数据量。<br>5.提高网速;<br>6.扩大服务器的内存;<br>7.增加服务器CPU个数;但是必须明白并行处理串行处理更需要资源例如内存。<br>8.如果是使用like进行查询的话，简单的使用index是不行的，但是全文索引，耗空间。 like ‘a%’ 使用索引 ,like ‘%a’ 不使用索引用 like ‘%a%’ 查询时，查询耗时和字段值总长度成正比,所以不能用CHAR类型，而是VARCHAR。对于字段的值很长的建全文索引。 </p>
+<h3 id="索引失效"><a href="#索引失效" class="headerlink" title="索引失效"></a>索引失效</h3><p>1.如果条件中有or，即使其中有条件带索引也不会使用(这也是为什么尽量少用or的原因)<br>2.对于多列索引，不是使用的第一部分(第一个)，则不会使用索引<br>3.like查询是以%开头<br>4..如果列类型是字符串，那一定要在条件中将数据使用引号引用起来,否则不使用索引<br>5.如果mysql估计使用全表扫描要比使用索引快,则不使用索引<br>6.没有查询条件，或者查询条件没有建立索引<br>7.查询的数量是大表的大部分，应该是30％以上<br>8.查询条件使用函数在索引列上，或者对索引列进行运算，运算包括(+，-，，/，! 等) 错误的例子：select from test where id-1=9; 正确的例子：select * from test where id=10;<br>9.not in ,not exist<br>10.B-tree索引 is null不会走,is not null会走,位图索引 is null,is not null 都会走</p>
+<h3 id="sql优化"><a href="#sql优化" class="headerlink" title="sql优化"></a>sql优化</h3><p>1.对查询进行优化，应尽量避免全表扫描，首先应考虑在 where 及 order by 涉及的列上建立索引。<br>2.应尽量避免在 where 子句中对字段进行 null 值判断，创建表时NULL是默认值，但大多数时候应该使用NOT NULL，或者使用一个特殊的值，如0，-1作为默 认值。<br>3.应尽量避免在 where 子句中使用!=或&lt;&gt;操作符， MySQL只有对以下操作符才使用索引：&lt;，&lt;=，=，&gt;，&gt;=，BETWEEN，IN，以及某些时候的LIKE。<br>4.应尽量避免在 where 子句中使用 or 来连接条件， 否则将导致引擎放弃使用索引而进行全表扫描， 可以 使用UNION合并查询： select id from t where num=10 union all select id from t where num=20<br>5.in 和 not in 也要慎用，否则会导致全表扫描，对于连续的数值，能用 between 就不要用 in 了：Select id from t where num between 1 and 3<br>6.like查询避免是以%开头<br>7.如果在 where 子句中使用参数，也会导致全表扫描。<br>8.应尽量避免在 where 子句中对字段进行表达式操作，应尽量避免在where子句中对字段进行函数操作<br>9.很多时候用 exists 代替 in 是一个好的选择，用<code>select num from a where exists(select 1 from b where num=a.num)</code>替换<code>select num from a where num in(select num from b)</code><br>10.索引固然可以提高相应的 select 的效率，但同时也降低了 insert 及 update 的效率，一个表的索引数最好不要超过6个。<br>11.尽量使用数字型字段，若只含数值信息的字段尽量不要设计为字符型，这会降低查询和连接的性能，并会增加存储开销。<br>12.尽可能的使用 varchar/nvarchar 代替 char/nchar ， 因为首先变长字段存储空间小，可以节省存储空间，其次对于查询来说，在一个相对较小的字段内搜索效率显然要高些。<br>13.最好不要使用<code>select from t</code>返回所有,，用具体的字段列表代替*，不要返回用不到的任何字段。<br>14.尽量避免向客户端返回大数据量<br>15.使用表的别名(Alias)：当在SQL语句中连接多个表时,请使用表的别名并把别名前缀于每个Column上.这样一来,就可以减少解析的时间并减少那些由Column歧义引起的语法错误。<br>16.使用“临时表”暂存中间结果。<br>17.常见的简化规则如下：不要有超过5个以上的表连接（JOIN），考虑使用临时表或表变量存放中间结果。<br>18.将需要查询的结果预先计算好放在表中，查询的时候再Select。<br>19.尽量使用“&gt;=”，不要使用“&gt;”。<br>20.下列SQL条件语句中的列都建有恰当的索引，但执行速度却非常慢：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">SELECT</span> * <span class="keyword">FROM</span> <span class="built_in">record</span> <span class="keyword">WHERE</span> <span class="keyword">substrINg</span>(card_no,<span class="number">1</span>,<span class="number">4</span>)=’<span class="number">5378</span>’ (<span class="number">13</span>秒)</span><br><span class="line"><span class="keyword">SELECT</span> * <span class="keyword">FROM</span> <span class="built_in">record</span> <span class="keyword">WHERE</span> amount/<span class="number">30</span>&lt; <span class="number">1000</span> （<span class="number">11</span>秒）</span><br><span class="line"><span class="keyword">SELECT</span> * <span class="keyword">FROM</span> <span class="built_in">record</span> <span class="keyword">WHERE</span> <span class="keyword">convert</span>(<span class="built_in">char</span>(<span class="number">10</span>),<span class="built_in">date</span>,<span class="number">112</span>)=’<span class="number">19991201</span>’ （<span class="number">10</span>秒）</span><br></pre></td></tr></table></figure>
+
+<p>分析：<br>WHERE子句中对列的任何操作结果都是在SQL运行时逐列计算得到的，因此它不得不进行表搜索，而没有使用该列上面的索引；如果这些结果在查询编译时就能得到，那么就可以被SQL优化器优化，使用索引，避免表搜索，因此将SQL重写成下面这样：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">SELECT</span> * <span class="keyword">FROM</span> <span class="built_in">record</span> <span class="keyword">WHERE</span> card_no <span class="keyword">like</span> ‘<span class="number">5378</span>%’ （&lt; <span class="number">1</span>秒）</span><br><span class="line"><span class="keyword">SELECT</span> * <span class="keyword">FROM</span> <span class="built_in">record</span> <span class="keyword">WHERE</span> amount&lt; <span class="number">1000</span>\*<span class="number">30</span> （&lt; <span class="number">1</span>秒）</span><br><span class="line"><span class="keyword">SELECT</span> * <span class="keyword">FROM</span> <span class="built_in">record</span> <span class="keyword">WHERE</span> <span class="built_in">date</span>= ‘<span class="number">1999</span>/<span class="number">12</span>/<span class="number">01</span>’ （&lt; <span class="number">1</span>秒）</span><br></pre></td></tr></table></figure>
+
+<p>21.当有一批处理的插入或更新时，用批量插入或批量更新，绝不会一条条记录的去更新<br>22.当只要一行数据时使用 LIMIT 1<br>23.选择表合适存储引擎：myisam: 应用时以读和插入操作为主，只有少量的更新和删除，并且对事务的完整性，并发性要求不是很高的。Innodb： 事务处理，以及并发条件下要求数据的一致性。除了插入和查询外，包括很多的更新和删除。<br>24.任何对列的操作都将导致表扫描，它包括数据库函数、计算表达式等等，查询时要尽可能将操作移至等号右边</p>
+
+    </div>
+
+    
+    
+    
+        
+      
+
+      <footer class="post-footer">
+	  <div>    
+		 
+		 
+		<ul class="post-copyright">
+		  <li class="post-copyright-author">
+			  <strong>本文作者：</strong>lhf2018
+		  </li>
+		  <li class="post-copyright-link">
+			<strong>本文链接：</strong>
+			<a href="/2020/08/08/Sql相关知识点总结/" title="Sql相关知识点总结">2020/08/08/Sql相关知识点总结/</a>
+		  </li>
+		  <li class="post-copyright-license">
+			<strong>版权： </strong>
+			本站文章均采用 <a href="http://creativecommons.org/licenses/by-nc-sa/3.0/cn/" rel="external nofollow" target="_blank">CC BY-NC-SA 3.0 CN</a> 许可协议，请勿用于商业，转载注明出处！
+		  </li>
+		</ul>
+		
+		</div>
+          
+            
+          
+          <div class="post-tags">
+            
+              <a href="/tags/数据库/" rel="tag"># 数据库</a>
+            
+          </div>
+        
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-next post-nav-item">
+              
+                <a href="/2020/07/25/HashMap和HashTable的区别/" rel="next" title="HashMap和HashTable的区别">
+                  <i class="fa fa-chevron-left"></i> HashMap和HashTable的区别
+                </a>
+              
+            </div>
+
+            <span class="post-nav-divider"></span>
+
+            <div class="post-nav-prev post-nav-item">
+              
+                <a href="/2020/08/12/安全的单例模式/" rel="prev" title="安全的单例模式">
+                  安全的单例模式 <i class="fa fa-chevron-right"></i>
+                </a>
+              
+            </div>
+          </div>
+        
+      </footer>
+    
+  </div>
+  
+  
+  
+  </article>
+
+  </div>
+
+
+          </div>
+          
+    
+    <div class="comments" id="comments"></div>
+  
+
+        </div>
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+        
+        
+        
+        
+      
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#如何查找MySQL中查询慢的SQL语句"><span class="nav-number">1.</span> <span class="nav-text">如何查找MySQL中查询慢的SQL语句</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#慢查询的原因"><span class="nav-number">2.</span> <span class="nav-text">慢查询的原因</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#慢查询的解决办法"><span class="nav-number">3.</span> <span class="nav-text">慢查询的解决办法</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#索引失效"><span class="nav-number">4.</span> <span class="nav-text">索引失效</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#sql优化"><span class="nav-number">5.</span> <span class="nav-text">sql优化</span></a></li></ol></div>
+        
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">lhf2018</p>
+  <div class="site-description" itemprop="description">热爱技术，也一直热爱生活</div>
+</div>
+  <nav class="site-state motion-element">
+      <div class="site-state-item site-state-posts">
+        
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">31</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+    
+      
+      
+      <div class="site-state-item site-state-categories">
+        
+          
+            <a href="/categories/">
+          
+        
+        <span class="site-state-item-count">22</span>
+        <span class="site-state-item-name">分类</span>
+        </a>
+      </div>
+    
+      
+      
+      <div class="site-state-item site-state-tags">
+        
+          
+            <a href="/tags/">
+          
+        
+        <span class="site-state-item-count">35</span>
+        <span class="site-state-item-name">标签</span>
+        </a>
+      </div>
+    
+  </nav>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+      
+      
+        
+      
+      
+        
+      
+        <a href="https://github.com/lhf2018" title="GitHub &rarr; https://github.com/lhf2018" rel="noopener" target="_blank"><i class="fa fa-fw fa-github"></i>GitHub</a>
+      </span>
+    
+      <span class="links-of-author-item">
+      
+      
+        
+      
+      
+        
+      
+        <a href="mailto:1146953160@qq.com" title="E-Mail &rarr; mailto:1146953160@qq.com" rel="noopener" target="_blank"><i class="fa fa-fw fa-envelope"></i>E-Mail</a>
+      </span>
+    
+      <span class="links-of-author-item">
+      
+      
+        
+      
+      
+        
+      
+        <a href="https://blog.csdn.net/weixin_44128511" title="CSDN &rarr; https://blog.csdn.net/weixin_44128511" rel="noopener" target="_blank"><i class="fa fa-fw fa-globe"></i>CSDN</a>
+      </span>
+    
+  </div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <script async src="https://dn-lbstatics.qbox.me/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+<div class="copyright">&copy; 2018 – <span itemprop="copyrightYear">2020</span>
+  <span class="with-love" id="animate">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">lhf2018</span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io" class="theme-link" rel="noopener" target="_blank">Hexo</a> 强力驱动</div>
+  <span class="post-meta-divider">|</span>
+  <div class="theme-info">主题 – <a href="https://theme-next.org" class="theme-link" rel="noopener" target="_blank">NexT.Mist</a></div>
+
+        
+<div class="busuanzi-count">
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-user"></i>
+    </span>
+    <span class="site-uv" title="总访客量">
+      <span class="busuanzi-value" id="busuanzi_value_site_uv"></span>
+    </span>
+  
+    <span class="post-meta-divider">|</span>
+  
+    <span class="post-meta-item-icon">
+      <i class="fa fa-eye"></i>
+    </span>
+    <span class="site-pv" title="总访问量">
+      <span class="busuanzi-value" id="busuanzi_value_site_pv"></span>
+    </span>
+  
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+  </div>
+
+  
+
+
+    
+  
+  <script color='0,0,255' opacity='0.5' zIndex='-1' count='99' src="/lib/canvas-nest/canvas-nest.min.js"></script>
+  <script src="/lib/anime.min.js?v=3.1.0"></script>
+  <script src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+  <script src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+<script src="/js/utils.js?v=7.4.0"></script><script src="/js/motion.js?v=7.4.0"></script>
+<script src="/js/schemes/muse.js?v=7.4.0"></script>
+
+<script src="/js/next-boot.js?v=7.4.0"></script>
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+  
+
+
+<script>
+NexT.utils.getScript('//unpkg.com/valine/dist/Valine.min.js', () => {
+  var GUEST = ['nick', 'mail', 'link'];
+  var guest = 'nick,mail,link';
+  guest = guest.split(',').filter(item => {
+    return GUEST.includes(item);
+  });
+  new Valine({
+    el: '#comments',
+    verify: false,
+    notify: false,
+    appId: 'sTlKRrcEUB2x5fvFyGXHhRG3-gzGzoHsz',
+    appKey: 'cWdqk79BaXeQSmekHDFYAzT0',
+    placeholder: 'Just go go',
+    avatar: 'mm',
+    meta: guest,
+    pageSize: '10' || 10,
+    visitor: true,
+    lang: 'zh-cn' || 'zh-cn',
+    path: location.pathname
+  });
+}, window.Valine);
+</script>
+
+  
+
+  <script src="https://cdn.jsdelivr.net/npm/moment@2.22.2/moment.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/moment-precise-range-plugin@1.3.0/moment-precise-range.min.js"></script>
+  <script>
+    function timer() {
+      var ages = moment.preciseDiff(moment(),moment(20190701,"YYYYMMDD"));
+      ages = ages.replace(/years?/, "年");
+      ages = ages.replace(/months?/, "月");
+      ages = ages.replace(/days?/, "天");
+      ages = ages.replace(/hours?/, "小时");
+      ages = ages.replace(/minutes?/, "分");
+      ages = ages.replace(/seconds?/, "秒");
+      ages = ages.replace(/\d+/g, '<span style="color:#1890ff">$&</span>');
+      div.innerHTML = `我已在此等候你 ${ages}`;
+    }
+    var div = document.createElement("div");
+    //插入到copyright之后
+    var copyright = document.querySelector(".copyright");
+    document.querySelector(".footer-inner").insertBefore(div, copyright.nextSibling);
+    timer();
+    setInterval("timer()",1000)
+  </script>
+
+</body>
+</html>
